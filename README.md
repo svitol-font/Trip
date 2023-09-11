@@ -1,4 +1,4 @@
-                                                           TRIP SOLIDITY
+                                     TRIP SOLIDITY
 
 Code designed for travel agents. 
 The purpose of the platform is to connect tourism service providers to the end user. 
