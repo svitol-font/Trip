@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import "./LTrip.sol";
 import "./Ownable.sol";
 
-contract Use is Ownable{
+contract Trip is Ownable{
 
     Ltrip.Journey[190] public journey;
 
