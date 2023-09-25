@@ -1,127 +1,181 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "./LTrip.sol";
+import "./Ltrip.sol";
 import "./Ownable.sol";
 
-contract Trip is Ownable{
-
+contract TripManager is Ownable {
     Ltrip.Journey[190] public journey;
 
-    // add : id : ticket
-    mapping (address =>mapping(uint8 => Ltrip.MyTicket))internal MyT;
 
-    // add :  id : balance
-    mapping(address => mapping(uint8 =>uint256)) internal Spbalance;
-    mapping(address => mapping(uint8 =>uint256)) internal Usbalance ;
+    // add : iD : ticket
+    mapping(address => mapping(uint8 => Ltrip.myTicket)) internal myTicket;
 
-    // FIND AVAILABLE ID 
-    function findID() external view returns(uint8){
+    // service provider balance    add :  iD : balance
+    mapping(address => mapping(uint8 => uint256)) internal spBalance;
+
+    // user balance   add :  iD : balance
+    mapping(address => mapping(uint8 => uint256)) internal usBalance;
+
+    
+
+    // da modificare
+    constructor(address owner) Ownable(owner) {
+        Ltrip.create(
+            journey,
+            0x53706c656e646f7220486f74656c202d20303031363420526f6d6120524d0000,    //32 chars
+            0x5669612047696f7267696f205a6f6567612c2032303200000000000000000000,
+            1791613788,
+            150000000000000000,
+            "room for 2 people (double bed) + breakfast buffet",  // to add more detailed information store the data off-chain
+            20,
+            0
+        );
+    }
+
+    // FIND AVAILABLE iD
+    function findId() external view returns (int256) {
         return Ltrip.find_id(journey);
     }
-     
-    //CREATE  
-    function addTrip(bytes32 name,bytes32 location,uint256 _EndDate,uint256 price ,uint8 totammount,uint8 id) external{
-        Ltrip.create(journey,name,location,price,_EndDate,totammount,id);
-    }
- 
-    // UPDATE          
-    function update(bytes32 name,bytes32 location,uint256 _EndDate,uint256 price ,uint8 totammount,uint8 ID) external{
-        Ltrip.update(journey,name,location,price,_EndDate,totammount,ID);
-    }
-
-    // BOOKING     
-    function boking(uint256 StartDate,uint256 EndDate,uint8 AmmTick,uint8 ID)external payable {
-        Ltrip.boking(MyT,journey,StartDate,EndDate,AmmTick,ID);
-
-        uint256 price = journey[ID].price;
-        uint256 total = price * AmmTick;
-        Usbalance[msg.sender][ID] +=  total;
+    //CREATE
+    function createTrip(
+        bytes32 name,
+        bytes32 location,
+        uint256 endDate,
+        uint256 price,
+        string memory description,
+        uint8 available,
+        uint8 iD
+    ) external {
+        Ltrip.create(journey, name, location,endDate, price, description, available, iD);
     }
 
-    // ADD QT TO TICKET                              
-    function addQt(uint8 AmmTick,uint8 ID)external payable{
-        Ltrip.add(MyT,journey,AmmTick,ID);
-
-        uint256 price = journey[ID].price;
-        uint256 total = price * AmmTick;
-        Usbalance[msg.sender][ID] +=  total;
+    // UPDATE  if sp wants to block the sale of the ticket he must set the available quantity to 0
+    //**if sp wants to cancel the creation of the trip, he could update with the default values ​​of 0
+    function update(
+        bytes32 name,
+        bytes32 location,
+        uint256 endDate,
+        uint256 price,
+        string memory description,
+        uint8 available,
+        uint8 iD
+        // address serviceProvider **
+    ) external {
+        Ltrip.update(journey, name, location, endDate,price, description, available, iD);
     }
 
-    //CANC ORDER       
-    function cancel(uint8 ID) external  {
-        Ltrip.canc(MyT,journey,ID);
+    // BOOKING
+    function boking(
+        uint256 startDate,
+        uint256 endDate,
+        uint8 amount,
+        uint8 iD
+    ) external payable {
+        Ltrip.boking(myTicket, journey, startDate, endDate, amount, iD);
 
-        uint256 TOTAL = Usbalance[msg.sender][ID];
-        Usbalance[msg.sender][ID] = 0;
+        uint256 price = journey[iD].price;
+        uint256 total = price * amount;
+        usBalance[msg.sender][iD] += total;
+    }
+
+    // ADD QUANTITY TO TICKET
+    function addAmount(uint8 amount, uint8 iD) external payable {
+        Ltrip.add(myTicket, journey, amount, iD);
+
+        uint256 price = journey[iD].price;
+        uint256 total = price * amount;
+        usBalance[msg.sender][iD] += total;
+    }
+
+    //CANC ORDER
+    function cancel(uint8 iD) external {
+        Ltrip.canc(myTicket, journey, iD);
+
+        uint256 TOTAL = usBalance[msg.sender][iD];
+        usBalance[msg.sender][iD] = 0;
         payable(msg.sender).transfer(TOTAL);
     }
 
-    //CANC SINGLE QT OF  ORDER   
-    function cancel_Qt(uint8 ID,uint8 AmmTick) external {
-        uint256 TOTAL = Ltrip.cancSingle(MyT,Usbalance,ID,AmmTick);
+    //CANC AMOUNT OF  ORDER
+    function cancelAmount(uint8 iD, uint8 amount) external {
+        uint256 TOTAL = Ltrip.cancSingle(myTicket, usBalance, iD, amount);
 
-        journey[ID].avaiable += AmmTick;
-        Usbalance[msg.sender][ID] -= TOTAL;
+        journey[iD].available += amount;
+        usBalance[msg.sender][iD] -= TOTAL;
         payable(msg.sender).transfer(TOTAL);
     }
 
     // PAY SP
-    function checkout(uint8 ID) external {
-        require (MyT[msg.sender][ID].QtOwned >= 1,"CheckId_Qt");
-        require (block.timestamp > MyT[msg.sender][ID].StartDate, "wait the Start of trip");
+    function checkout(uint8 iD) external {
+        require(myTicket[msg.sender][iD].amountOwned >= 1, "Check_iD_Qt");
+        require(
+            block.timestamp > myTicket[msg.sender][iD].startDate,
+            "Wait the start of trip"
+        );
 
-        uint256 TOTAL = Usbalance[msg.sender][ID];
-        address SP = journey[ID].serviceProvider;
-        MyT[msg.sender][ID].QtOwned = 0;
-        Usbalance[msg.sender][ID] = 0;
-        
-        Spbalance[SP][ID] += TOTAL;
+        uint256 TOTAL = usBalance[msg.sender][iD];
+        address SP = journey[iD].serviceProvider;
+        myTicket[msg.sender][iD].amountOwned = 0;
+        usBalance[msg.sender][iD] = 0;
+
+        spBalance[SP][iD] += TOTAL;
     }
-    
+
     // SP WITHDRAW
-    function spwithdraw(uint8 ID)external {
-        require (msg.sender == journey[ID].serviceProvider,"NotOwner");
+    function spwithdraw(uint8 iD) external {
+        require(msg.sender == journey[iD].serviceProvider, "NotOwner");
 
-        uint256 TOTAL = Spbalance[msg.sender][ID];
-        Spbalance[msg.sender][ID] = 0;
+        uint256 TOTAL = spBalance[msg.sender][iD];
+        spBalance[msg.sender][iD] = 0;
 
-        uint256 FEE = TOTAL/100 ; //  1%
-        uint256 DIFF = TOTAL - FEE;
+        uint256 FEE = TOTAL / 100; //  1%
+        uint256 NET = TOTAL - FEE;
 
         owner.transfer(FEE);
-        payable(msg.sender).transfer(DIFF);
+        payable(msg.sender).transfer(NET);
     }
 
-    function trips() external view returns(Ltrip.Journey[190] memory){
-        return journey; 
+    function trips() external view returns (Ltrip.Journey[190] memory) {
+        return journey;
     }
 
-    function trip_by_index(uint8 index) external view returns(Ltrip.Journey memory){
-        return journey[index];       
+    function tripByIndex(uint8 index)
+        external
+        view
+        returns (Ltrip.Journey memory)
+    {
+        return journey[index];
     }
 
-    function mytickets(uint8 ID ) public view returns(Ltrip.MyTicket memory){
-        return MyT[msg.sender][ID];
+    function myTickets(uint8 iD) public view returns (Ltrip.myTicket memory) {
+        return myTicket[msg.sender][iD];
     }
 
-    function rUsbalance(uint8 ID)public view returns (uint256){
-        return Usbalance[msg.sender][ID];
+    function UsBalance(uint8 iD) public view returns (uint256) {
+        return usBalance[msg.sender][iD];
     }
 
-    function rSpbalance(uint8 ID)public view returns (uint256){
-        return Spbalance[msg.sender][ID];
+    function SpBalance(uint8 iD) public view returns (uint256) {
+        return spBalance[msg.sender][iD];
     }
 
-    //CHECK INACTIVITY ID onlyOwner
-    function checkInactivity() external onlyOwner view returns(uint8 id){
+    //CHECK INACTIVITY iD onlyOwner
+    function checkInactivity() external view onlyOwner returns (int iD) {
         return Ltrip.checkInactivity(journey);
     }
 
     // DELETE TRIP   onlyOwner
-    function del(uint8 Id)external onlyOwner {
-        require (block.timestamp > journey[Id].EndDate + 90 days," < EndDate + 90d");
-        delete journey[Id];
+    function del(uint8 iD) external onlyOwner {
+        require(
+            block.timestamp > journey[iD].endDate + 90 days,  //+ 90 days
+            " < endDate + 90d"
+        );
+        delete journey[iD];
     }
+
+
+
+
     
 }
