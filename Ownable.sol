@@ -4,10 +4,10 @@ pragma solidity ^0.8.17;
 
 contract Ownable{
 
-    address payable owner;
+    address payable public owner ;
 
-    constructor(){
-        owner = payable(msg.sender);
+    constructor(address _owner){
+        owner = payable(_owner);
     }
 
     modifier onlyOwner() {
