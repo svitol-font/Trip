@@ -20,8 +20,4 @@ Service providers can withdraw at any time by selecting the trip id.
 
 NB The ticket id corresponds to the trip id.
 
-Deployed files on Sepolia Testnet:
 
-LTrip.sol  0x5e00334cd143dbdd4bcaf945abfba5b55874c16a
-
-TripManager.sol 0x688faD7B431d7431FA384cb0a3b26409EF93588f
