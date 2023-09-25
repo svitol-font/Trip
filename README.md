@@ -18,6 +18,6 @@ Service providers can withdraw at any time by selecting the trip id.
 
 
 
-NB The ticket id corresponds to the trip id.
+Please note: The ticket id corresponds to the trip id.
 
 
