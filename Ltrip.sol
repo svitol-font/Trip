@@ -27,7 +27,7 @@ library Ltrip {
 
 
     // FIND YOUR AVAILABLE id
-    function find_id(Journey[190] storage journey)
+    function findId(Journey[190] storage journey)
             public
             view
             returns (int index)
@@ -37,7 +37,7 @@ library Ltrip {
                     return int(x) ;
                 }
             }
-            return -1;
+            return -1; // nothing found
         }
 
     // CREATE
@@ -124,7 +124,7 @@ library Ltrip {
         emit Booking(id, amount);
     }
 
-    // ADD QUANTITY TO TICKET
+    // ADD AMOUNT TO TICKET
     function add(
         mapping(address => mapping(uint8 => myTicket)) storage myT,
         Journey[190] storage journey,

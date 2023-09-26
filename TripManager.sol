@@ -7,7 +7,6 @@ import "./Ownable.sol";
 contract TripManager is Ownable {
     Ltrip.Journey[190] public journey;
 
-
     // add : iD : ticket
     mapping(address => mapping(uint8 => Ltrip.myTicket)) internal myTicket;
 
@@ -17,9 +16,7 @@ contract TripManager is Ownable {
     // user balance   add :  iD : balance
     mapping(address => mapping(uint8 => uint256)) internal usBalance;
 
-    
 
-    // da modificare
     constructor(address owner) Ownable(owner) {
         Ltrip.create(
             journey,
@@ -35,8 +32,9 @@ contract TripManager is Ownable {
 
     // FIND AVAILABLE iD
     function findId() external view returns (int256) {
-        return Ltrip.find_id(journey);
+        return Ltrip.findId(journey);
     }
+
     //CREATE
     function createTrip(
         bytes32 name,
@@ -50,8 +48,8 @@ contract TripManager is Ownable {
         Ltrip.create(journey, name, location,endDate, price, description, available, iD);
     }
 
-    // UPDATE  if sp wants to block the sale of the ticket he must set the available quantity to 0
-    //**if sp wants to cancel the creation of the trip, he could update with the default values ​​of 0
+    // UPDATE  if service provider wants to block the sale of the ticket he must set the available quantity to 0
+    //**if s.p. wants to cancel the creation of the trip, he could update with the default values ​​of the variables
     function update(
         bytes32 name,
         bytes32 location,
@@ -62,7 +60,7 @@ contract TripManager is Ownable {
         uint8 iD
         // address serviceProvider **
     ) external {
-        Ltrip.update(journey, name, location, endDate,price, description, available, iD);
+        Ltrip.update(journey, name, location, endDate,price, description, available, iD);  
     }
 
     // BOOKING
@@ -79,7 +77,7 @@ contract TripManager is Ownable {
         usBalance[msg.sender][iD] += total;
     }
 
-    // ADD QUANTITY TO TICKET
+    // ADD AMOUNT TO TICKET
     function addAmount(uint8 amount, uint8 iD) external payable {
         Ltrip.add(myTicket, journey, amount, iD);
 
@@ -97,7 +95,7 @@ contract TripManager is Ownable {
         payable(msg.sender).transfer(TOTAL);
     }
 
-    //CANC AMOUNT OF  ORDER
+    //CANC AMOUNT OF ORDER
     function cancelAmount(uint8 iD, uint8 amount) external {
         uint256 TOTAL = Ltrip.cancSingle(myTicket, usBalance, iD, amount);
 
@@ -106,7 +104,7 @@ contract TripManager is Ownable {
         payable(msg.sender).transfer(TOTAL);
     }
 
-    // PAY SP
+    // PAY SERVICE PROVIDER
     function checkout(uint8 iD) external {
         require(myTicket[msg.sender][iD].amountOwned >= 1, "Check_iD_Qt");
         require(
@@ -122,7 +120,7 @@ contract TripManager is Ownable {
         spBalance[SP][iD] += TOTAL;
     }
 
-    // SP WITHDRAW
+    // SERVICE PROVIDER WITHDRAW
     function spwithdraw(uint8 iD) external {
         require(msg.sender == journey[iD].serviceProvider, "NotOwner");
 
@@ -168,8 +166,8 @@ contract TripManager is Ownable {
     // DELETE TRIP   onlyOwner
     function del(uint8 iD) external onlyOwner {
         require(
-            block.timestamp > journey[iD].endDate + 90 days,  //+ 90 days
-            " < endDate + 90d"
+            block.timestamp > journey[iD].endDate + 90 days, 
+            "< endDate + 90d"
         );
         delete journey[iD];
     }
