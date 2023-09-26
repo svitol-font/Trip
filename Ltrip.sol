@@ -193,7 +193,7 @@ library Ltrip {
                     return int(x);
                 }
             }
-            return -1;
+            return -1; //nothing found
         }
 
 

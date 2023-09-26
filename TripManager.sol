@@ -121,7 +121,7 @@ contract TripManager is Ownable {
     }
 
     // SERVICE PROVIDER WITHDRAW
-    function spwithdraw(uint8 iD) external {
+    function SpWithdraw(uint8 iD) external {
         require(msg.sender == journey[iD].serviceProvider, "NotOwner");
 
         uint256 TOTAL = spBalance[msg.sender][iD];
@@ -134,17 +134,18 @@ contract TripManager is Ownable {
         payable(msg.sender).transfer(NET);
     }
 
-    function trips() external view returns (Ltrip.Journey[190] memory) {
+    function trips() public view returns (Ltrip.Journey[190] memory) {
         return journey;
     }
 
-    function tripByIndex(uint8 index)
+    function tripByIndex(uint8 iD)
         external
         view
         returns (Ltrip.Journey memory)
     {
-        return journey[index];
+        return journey[iD];
     }
+
 
     function myTickets(uint8 iD) public view returns (Ltrip.myTicket memory) {
         return myTicket[msg.sender][iD];
